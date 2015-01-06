@@ -5,35 +5,34 @@ Example
 ---------------
 ```php
 <?php
-// model.php
 use Fsv\XModel\Filter;
-use Fsv\XModel\Mapping as Xml;
+use Fsv\XModel\Mapping;
 use Fsv\XModel\Transformer;
 
 /**
- * @Xml\Root
+ * @Mapping\Root
  * @Filter\CssSelector(".repository-content")
  */
 class Repository
 {
     /**
      * @var array
-     * @Xml\Node
-     * @Xml\Children("Issue")
+     * @Mapping\Element
+     * @Mapping\Children("Issue")
      * @Filter\CssSelector(".table-list-issues")
      */
     public $issues = [];
 }
 
 /**
- * @Xml\Root
+ * @Mapping\Root
  * @Filter\CssSelector(".table-list-item")
  */
 class Issue
 {
     /**
      * @var string
-     * @Xml\Node
+     * @Mapping\Element
      * @Filter\CssSelector(".issue-title > a")
      * @Transformer\Trim
      */
@@ -41,36 +40,35 @@ class Issue
 
     /**
      * @var string
-     * @Xml\Node
+     * @Mapping\Attribute("href")
      * @Filter\CssSelector(".issue-title > a")
-     * @Filter\XPath("@href")
      */
     public $url;
 
     /**
      * @var string
-     * @Xml\Node
+     * @Mapping\Element
      * @Filter\CssSelector(".issue-meta-section > a")
      */
     public $author;
 
     /**
      * @var \DateTime
-     * @Xml\Node
+     * @Mapping\Attribute("datetime")
      * @Filter\CssSelector(".issue-meta-section > time")
-     * @Filter\XPath("@datetime")
      * @Transformer\DateTime
      */
     public $createdAt;
 
     /**
      * @var float
-     * @Xml\Node
+     * @Mapping\Element
      * @Filter\CssSelector(".issue-comments")
      * @Transformer\Numeric
      */
     public $commentCount;
 }
+
 ```
 
 ```php
@@ -78,7 +76,6 @@ class Issue
 // test.php
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Annotations\AnnotationRegistry;
-use Fsv\XModel\Model;
 use Fsv\XModel\Reader;
 
 require_once __DIR__ . '/../vendor/autoload.php';
@@ -90,9 +87,8 @@ AnnotationRegistry::registerAutoloadNamespaces([
     'Fsv\XModel\Transformer'    => __DIR__ . '/../src'
 ]);
 
-$model = new Model('Repository');
-$reader = new Reader($model, new AnnotationReader());
-print_r($reader->readHtmlFile('https://github.com/symfony/symfony/issues')[0]);
+$reader = new Reader(new AnnotationReader());
+print_r($reader->readHtmlFile('Repository', 'https://github.com/symfony/symfony/issues')[0]);
 ```
 
 ```
