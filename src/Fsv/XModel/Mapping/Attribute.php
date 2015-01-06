@@ -2,13 +2,13 @@
 namespace Fsv\XModel\Mapping;
 
 /**
- * Class Root
+ * Class Attribute
  * @package Fsv\XModel\Mapping
  *
  * @Annotation
- * @Target("CLASS")
+ * @Target("PROPERTY")
  */
-class Root extends AbstractNode
+class Attribute extends AbstractNode
 {
 
 }

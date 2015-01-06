@@ -1,15 +1,14 @@
 <?php
-namespace Fsv\XModel;
+namespace Fsv\XModel\Mapping;
 
 use Fsv\XModel\Filter\FilterChain;
-use Fsv\XModel\Mapping\Root;
-use Fsv\XModel\Mapping\XPath;
+use Fsv\XModel\FilterInterface;
 
 /**
- * Class Model
- * @package Fsv\XModel
+ * Class ModelMetadata
+ * @package Fsv\XModel\Mapping
  */
-class Model
+class ModelMetadata extends AbstractMetadata
 {
     /**
      * @var string
@@ -17,17 +16,7 @@ class Model
     private $className;
 
     /**
-     * @var Root
-     */
-    private $root;
-
-    /**
-     * @var XPath
-     */
-    private $xpath;
-
-    /**
-     * @var Property[]
+     * @var PropertyMetadata[]
      */
     private $properties = [];
 
@@ -54,29 +43,10 @@ class Model
     }
 
     /**
-     * @param Root $root
-     * @return Model
+     * @param PropertyMetadata $property
+     * @return ModelMetadata
      */
-    public function setRoot(Root $root)
-    {
-        $this->root = $root;
-
-        return $this;
-    }
-
-    /**
-     * @return Root
-     */
-    public function getRoot()
-    {
-        return $this->root;
-    }
-
-    /**
-     * @param Property $property
-     * @return Model
-     */
-    public function addProperty(Property $property)
+    public function addProperty(PropertyMetadata $property)
     {
         $this->properties[] = $property;
 
@@ -84,7 +54,7 @@ class Model
     }
 
     /**
-     * @return Property[]
+     * @return PropertyMetadata[]
      */
     public function getProperties()
     {
@@ -92,27 +62,8 @@ class Model
     }
 
     /**
-     * @param XPath $xpath
-     * @return Property
-     */
-    public function setXPath(XPath $xpath)
-    {
-        $this->xpath = $xpath;
-
-        return $this;
-    }
-
-    /**
-     * @return XPath
-     */
-    public function getXPath()
-    {
-        return $this->xpath;
-    }
-
-    /**
      * @param FilterInterface $filter
-     * @return Property
+     * @return ModelMetadata
      */
     public function addFilter(FilterInterface $filter)
     {

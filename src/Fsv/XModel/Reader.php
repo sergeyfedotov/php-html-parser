@@ -5,10 +5,12 @@ use DOMDocument;
 use DOMNode;
 use DOMXPath;
 use Doctrine\Common\Annotations\Reader as AnnotationReader;
+use Fsv\XModel\Mapping\Attribute;
 use Fsv\XModel\Mapping\Children;
-use Fsv\XModel\Mapping\Node;
+use Fsv\XModel\Mapping\Element;
+use Fsv\XModel\Mapping\ModelMetadata;
+use Fsv\XModel\Mapping\PropertyMetadata;
 use Fsv\XModel\Mapping\Root;
-use Fsv\XModel\Mapping\XPath;
 use LibXMLError;
 use ReflectionClass;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
@@ -21,11 +23,6 @@ use Symfony\Component\PropertyAccess\PropertyPath;
 class Reader
 {
     /**
-     * @var Model
-     */
-    private $model;
-
-    /**
      * @var AnnotationReader
      */
     private $annotationReader;
@@ -36,25 +33,11 @@ class Reader
     private $errors;
 
     /**
-     * @param Model $model
      * @param AnnotationReader $annotationReader
      */
-    public function __construct(Model $model, AnnotationReader $annotationReader = null)
+    public function __construct(AnnotationReader $annotationReader = null)
     {
-        $this->model = $model;
         $this->annotationReader = $annotationReader;
-
-        if (null !== $annotationReader) {
-            $this->readModelAnnotation($model);
-        }
-    }
-
-    /**
-     * @return Model
-     */
-    public function getModel()
-    {
-        return $this->model;
     }
 
     /**
@@ -66,65 +49,66 @@ class Reader
     }
 
     /**
-     * @param $model
+     * @param ModelMetadata $modelMetadata
      */
-    public function readModelAnnotation(Model $model)
+    public function loadModelMetadata(ModelMetadata $modelMetadata)
     {
-        $reflectionClass = new ReflectionClass($model->getClassName());
+        $reflectionClass = new ReflectionClass($modelMetadata->getClassName());
 
         foreach ($this->annotationReader->getClassAnnotations($reflectionClass) as $annotation) {
             if ($annotation instanceof Root) {
-                $model->setRoot($annotation);
+                $modelMetadata->setNode($annotation);
             } else if ($annotation instanceof FilterInterface) {
-                $model->addFilter($annotation);
+                $modelMetadata->addFilter($annotation);
             }
         }
 
         foreach ($reflectionClass->getProperties() as $reflectionProperty) {
-            $property = new Property($reflectionProperty->getName());
+            $propertyMetadata = new PropertyMetadata($reflectionProperty->getName());
 
             foreach ($this->annotationReader->getPropertyAnnotations($reflectionProperty) as $annotation) {
-                if ($annotation instanceof Node) {
-                    $property->setNode($annotation);
+                if ($annotation instanceof Element
+                    || $annotation instanceof Attribute
+                ) {
+                    $propertyMetadata->setNode($annotation);
 
-                    if (null === $annotation->getName()) {
-                        $annotation->setName($reflectionProperty->getName());
+                    if (null === $annotation->name) {
+                        $annotation->name = $reflectionProperty->getName();
                     }
                 } else if ($annotation instanceof Children) {
-                    $property->setChildren($annotation);
-
-                    $childModel = new Model($annotation->getClassName());
-                    $property->setModel($childModel);
-                    $this->readModelAnnotation($childModel);
-                } else if ($annotation instanceof XPath) {
-                    $property->setXPath($annotation);
+                    $propertyMetadata->setChildren($annotation);
+                    $this->loadModelMetadata($annotation->getAssociatedModelMetadata());
                 } else if ($annotation instanceof TransformerInterface) {
-                    $property->addTranformer($annotation);
+                    $propertyMetadata->addTransformer($annotation);
                 } else if ($annotation instanceof FilterInterface) {
-                    $property->addFilter($annotation);
+                    $propertyMetadata->addFilter($annotation);
                 }
             }
 
-            $model->addProperty($property);
+            if (null !== $propertyMetadata->getNode()) {
+                $modelMetadata->addProperty($propertyMetadata);
+            }
         }
     }
 
     /**
+     * @param string $className
      * @param string $path
      * @return object[]
      */
-    public function readHtmlFile($path)
+    public function readHtmlFile($className, $path)
     {
-        $useInternalErrors = libxml_use_internal_errors(true);
+        $modelMetadata = new ModelMetadata($className);
+        $this->loadModelMetadata($modelMetadata);
 
+        $useInternalErrors = libxml_use_internal_errors(true);
         $document = new DOMDocument();
         $document->loadHTMLFile($path);
         $this->errors = libxml_get_errors();
         libxml_clear_errors();
-
         libxml_use_internal_errors($useInternalErrors);
 
-        return $this->createObjects($this->model, new DOMXpath($document), null);
+        return $this->createObjects($modelMetadata, new DOMXpath($document), null);
     }
 
     /**
@@ -135,31 +119,42 @@ class Reader
         return $this->errors;
     }
 
-    private function createObjects(Model $model, DOMXPath $xpath, DOMNode $contextNode = null)
+    /**
+     * @param ModelMetadata $modelMetadata
+     * @param DOMXPath $xpath
+     * @param DOMNode $contextNode
+     * @return array
+     */
+    private function createObjects(ModelMetadata $modelMetadata, DOMXPath $xpath, DOMNode $contextNode = null)
     {
-        $className = $model->getClassName();
+        $className = $modelMetadata->getClassName();
         $accessor = new PropertyAccessor();
         $objects = [];
 
-        foreach ($model->getFilterChain()->apply($xpath, [$contextNode]) as $rootNode) {
+        foreach ($modelMetadata->getFilterChain()->apply($xpath, [$contextNode]) as $rootNode) {
             $object = new $className();
 
-            foreach ($model->getProperties() as $property) {
-                $propertyNode = $property->getFilterChain()->apply($xpath, [$rootNode])[0];
-                $propertyPath = new PropertyPath($property->getName());
+            foreach ($modelMetadata->getProperties() as $propertyMetadata) {
+                $propertyNode = $propertyMetadata->getFilterChain()->apply($xpath, [$rootNode])[0];
 
-                if (null !== ($children = $property->getChildren())) {
+                if ($propertyMetadata->getNode() instanceof Attribute) {
+                    $propertyNode = $propertyNode->attributes[$propertyMetadata->getName()];
+                }
+
+                $propertyPath = new PropertyPath($propertyMetadata->getName());
+
+                if (null !== ($children = $propertyMetadata->getChildren())) {
                     $accessor->setValue(
                         $object,
                         $propertyPath,
-                        $this->createObjects($property->getModel(), $xpath, $propertyNode)
+                        $this->createObjects($children->getAssociatedModelMetadata(), $xpath, $propertyNode)
                     );
                 } else {
                     if (null !== $propertyNode && $accessor->isWritable($object, $propertyPath)) {
                         $accessor->setValue(
                             $object,
                             $propertyPath,
-                            $property->getTransformerChain()->transform($propertyNode->nodeValue)
+                            $propertyMetadata->getTransformerChain()->transform($propertyNode->nodeValue)
                         );
                     }
                 }

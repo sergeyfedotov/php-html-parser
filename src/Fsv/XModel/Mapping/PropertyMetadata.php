@@ -1,17 +1,16 @@
 <?php
-namespace Fsv\XModel;
+namespace Fsv\XModel\Mapping;
 
 use Fsv\XModel\Filter\FilterChain;
-use Fsv\XModel\Mapping\Node;
-use Fsv\XModel\Mapping\Children;
-use Fsv\XModel\Mapping\XPath;
+use Fsv\XModel\FilterInterface;
 use Fsv\XModel\Transformer\TransformerChain;
+use Fsv\XModel\TransformerInterface;
 
 /**
- * Class Property
- * @package Fsv\XModel
+ * Class PropertyMetadata
+ * @package Fsv\XModel\Mapping
  */
-class Property
+class PropertyMetadata extends AbstractMetadata
 {
     /**
      * @var string
@@ -19,24 +18,9 @@ class Property
     private $name;
 
     /**
-     * @var Node
-     */
-    private $node;
-
-    /**
      * @var Children
      */
     private $children;
-
-    /**
-     * @var Model
-     */
-    private $model;
-
-    /**
-     * @var XPath
-     */
-    private $xpath;
 
     /**
      * @var TransformerChain
@@ -67,19 +51,8 @@ class Property
     }
 
     /**
-     * @param Node $node
-     * @return Property
-     */
-    public function setNode(Node $node)
-    {
-        $this->node = $node;
-
-        return $this;
-    }
-
-    /**
      * @param Children $children
-     * @return Property
+     * @return PropertyMetadata
      */
     public function setChildren(Children $children)
     {
@@ -97,48 +70,10 @@ class Property
     }
 
     /**
-     * @param Model $model
-     * @return Property
-     */
-    public function setModel(Model $model)
-    {
-        $this->model = $model;
-
-        return $this;
-    }
-
-    /**
-     * @return Model
-     */
-    public function getModel()
-    {
-        return $this->model;
-    }
-
-    /**
-     * @param XPath $xpath
-     * @return Property
-     */
-    public function setXPath(XPath $xpath)
-    {
-        $this->xpath = $xpath;
-
-        return $this;
-    }
-
-    /**
-     * @return XPath
-     */
-    public function getXPath()
-    {
-        return $this->xpath;
-    }
-
-    /**
      * @param TransformerInterface $transformer
-     * @return Property
+     * @return PropertyMetadata
      */
-    public function addTranformer(TransformerInterface $transformer)
+    public function addTransformer(TransformerInterface $transformer)
     {
         $this->transformerChain->add($transformer);
 
@@ -155,7 +90,7 @@ class Property
 
     /**
      * @param FilterInterface $filter
-     * @return Property
+     * @return PropertyMetadata
      */
     public function addFilter(FilterInterface $filter)
     {

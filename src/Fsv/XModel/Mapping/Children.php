@@ -1,30 +1,59 @@
 <?php
 namespace Fsv\XModel\Mapping;
 
+use Fsv\XModel\AbstractAnnotation;
+use InvalidArgumentException;
+
 /**
+ * Class Children
+ * @package Fsv\XModel\Mapping
+ *
  * @Annotation
  * @Target("PROPERTY")
  */
-class Children
+class Children extends AbstractAnnotation
 {
     /**
      * @var string
      */
-    private $className;
+    public $className;
 
     /**
-     * @param array $attributes
+     * @var ModelMetadata
      */
-    public function __construct(array $attributes)
+    private $associatedModelMetadata;
+
+    /**
+     * @param array $options
+     */
+    public function __construct(array $options = [])
     {
-        $this->className = isset($attributes['value']) ? $attributes['value'] : null;
+        parent::__construct($options);
+
+        if (null === $this->className
+            || !class_exists($this->className)
+        ) {
+            throw new InvalidArgumentException('"className" is required option');
+        }
     }
 
     /**
      * @return string
      */
-    public function getClassName()
+    public function getDefaultOptionName()
     {
-        return $this->className;
+        return 'className';
+    }
+
+    /**
+     * @return ModelMetadata
+     */
+    public function getAssociatedModelMetadata()
+    {
+        if (null === $this->associatedModelMetadata) {
+            $this->associatedModelMetadata = new ModelMetadata($this->className);
+        }
+
+        return $this->associatedModelMetadata;
     }
 }
