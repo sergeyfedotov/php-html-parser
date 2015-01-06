@@ -17,7 +17,7 @@ abstract class AbstractAnnotation
      */
     public function __construct(array $options = [])
     {
-        foreach (get_object_vars($this) as $name) {
+        foreach (get_object_vars($this) as $name => $value) {
             if (isset($options[$name])) {
                 $this->{$name} = $options[$name];
             }
