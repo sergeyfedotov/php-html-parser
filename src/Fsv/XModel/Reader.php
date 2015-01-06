@@ -6,7 +6,6 @@ use DOMNode;
 use DOMXPath;
 use Doctrine\Common\Annotations\Reader as AnnotationReader;
 use Fsv\XModel\Mapping\Attribute;
-use Fsv\XModel\Mapping\Children;
 use Fsv\XModel\Mapping\Element;
 use Fsv\XModel\Mapping\ModelMetadata;
 use Fsv\XModel\Mapping\PropertyMetadata;
@@ -75,9 +74,12 @@ class Reader
                     if (null === $annotation->name) {
                         $annotation->name = $reflectionProperty->getName();
                     }
-                } else if ($annotation instanceof Children) {
-                    $propertyMetadata->setChildren($annotation);
-                    $this->loadModelMetadata($annotation->getAssociatedModelMetadata());
+
+                    if ($annotation instanceof Element
+                        && null !== $annotation->className
+                    ) {
+                        $this->loadModelMetadata($annotation->getAssociatedModelMetadata());
+                    }
                 } else if ($annotation instanceof TransformerInterface) {
                     $propertyMetadata->addTransformer($annotation);
                 } else if ($annotation instanceof FilterInterface) {
@@ -136,18 +138,19 @@ class Reader
 
             foreach ($modelMetadata->getProperties() as $propertyMetadata) {
                 $propertyNode = $propertyMetadata->getFilterChain()->apply($xpath, [$rootNode])[0];
+                $mappedNode = $propertyMetadata->getNode();
 
-                if ($propertyMetadata->getNode() instanceof Attribute) {
+                if ($mappedNode instanceof Attribute) {
                     $propertyNode = $propertyNode->attributes[$propertyMetadata->getName()];
                 }
 
                 $propertyPath = new PropertyPath($propertyMetadata->getName());
 
-                if (null !== ($children = $propertyMetadata->getChildren())) {
+                if ($mappedNode instanceof Element && null !== $mappedNode->className) {
                     $accessor->setValue(
                         $object,
                         $propertyPath,
-                        $this->createObjects($children->getAssociatedModelMetadata(), $xpath, $propertyNode)
+                        $this->createObjects($mappedNode->getAssociatedModelMetadata(), $xpath, $propertyNode)
                     );
                 } else {
                     if (null !== $propertyNode && $accessor->isWritable($object, $propertyPath)) {
