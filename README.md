@@ -17,8 +17,7 @@ class Repository
 {
     /**
      * @var array
-     * @Mapping\Element
-     * @Mapping\Children("Issue")
+     * @Mapping\Element(className="Issue")
      * @Filter\CssSelector(".table-list-issues")
      */
     public $issues = [];
