@@ -17,7 +17,7 @@ class Repository
 {
     /**
      * @var array
-     * @Mapping\Element(className="Issue")
+     * @Mapping\Element(className="Issue", hasMany=true)
      * @Filter\CssSelector(".table-list-issues")
      */
     public $issues = [];
@@ -45,8 +45,8 @@ class Issue
     public $url;
 
     /**
-     * @var string
-     * @Mapping\Element
+     * @var Author
+     * @Mapping\Element(className="Author")
      * @Filter\CssSelector(".issue-meta-section > a")
      */
     public $author;
@@ -68,6 +68,19 @@ class Issue
     public $commentCount;
 }
 
+/**
+ * @Mapping\Root
+ * @Filter\XPath(".")
+ */
+class Author
+{
+    /**
+     * @var string
+     * @Mapping\Element
+     * @Filter\XPath("text()")
+     */
+    public $name;
+}
 ```
 
 ```php
@@ -98,32 +111,40 @@ Repository Object
         (
             [0] => Issue Object
                 (
-                    [title] => [Security][Bug] urlRedirectAction suddenly triggers security (BC break?)
-                    [url] => /symfony/symfony/issues/13277
-                    [author] => iltar
+                    [title] => Form using Validator Constraint File - Max File Size not validating correctly, element returns NULL
+                    [url] => /symfony/symfony/issues/13291
+                    [author] => Author Object
+                        (
+                            [name] => humanoyd
+                        )
+
                     [createdAt] => DateTime Object
                         (
-                            [date] => 2015-01-06 09:40:47.000000
+                            [date] => 2015-01-06 18:58:58.000000
                             [timezone_type] => 2
                             [timezone] => Z
                         )
 
-                    [commentCount] => 0
+                    [commentCount] => 2
                 )
 
             [1] => Issue Object
                 (
-                    [title] => [Security] login_check route throws exception on php 5.4.4: Parent session handler is not open
-                    [url] => /symfony/symfony/issues/13269
-                    [author] => derrabus
+                    [title] => Symfony crash on automatic PHP enviroment switching from HHVM to PHP5-FPM.
+                    [url] => /symfony/symfony/issues/13288
+                    [author] => Author Object
+                        (
+                            [name] => damiencal
+                        )
+
                     [createdAt] => DateTime Object
                         (
-                            [date] => 2015-01-05 16:31:58.000000
+                            [date] => 2015-01-06 15:43:07.000000
                             [timezone_type] => 2
                             [timezone] => Z
                         )
 
-                    [commentCount] => 3
+                    [commentCount] => 1
                 )
 ...
 ```

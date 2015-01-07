@@ -147,11 +147,19 @@ class Reader
                 $propertyPath = new PropertyPath($propertyMetadata->getName());
 
                 if ($mappedNode instanceof Element && null !== $mappedNode->className) {
-                    $accessor->setValue(
-                        $object,
-                        $propertyPath,
-                        $this->createObjects($mappedNode->getAssociatedModelMetadata(), $xpath, $propertyNode)
+                    $associatedObjects = $this->createObjects(
+                        $mappedNode->getAssociatedModelMetadata(),
+                        $xpath,
+                        $propertyNode
                     );
+
+                    if (isset($associatedObjects[0])) {
+                        $accessor->setValue(
+                            $object,
+                            $propertyPath,
+                            $mappedNode->hasMany ? $associatedObjects : $associatedObjects[0]
+                        );
+                    }
                 } else {
                     if (null !== $propertyNode && $accessor->isWritable($object, $propertyPath)) {
                         $accessor->setValue(

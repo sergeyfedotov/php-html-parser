@@ -18,6 +18,11 @@ class Element extends AbstractNode
     public $className;
 
     /**
+     * @var bool
+     */
+    public $hasMany = false;
+
+    /**
      * @var ModelMetadata
      */
     private $associatedModelMetadata;
