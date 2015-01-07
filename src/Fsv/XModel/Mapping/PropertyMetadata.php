@@ -18,11 +18,6 @@ class PropertyMetadata extends AbstractMetadata
     private $name;
 
     /**
-     * @var Children
-     */
-    private $children;
-
-    /**
      * @var TransformerChain
      */
     private $transformerChain;
@@ -48,25 +43,6 @@ class PropertyMetadata extends AbstractMetadata
     public function getName()
     {
         return $this->name;
-    }
-
-    /**
-     * @param Children $children
-     * @return PropertyMetadata
-     */
-    public function setChildren(Children $children)
-    {
-        $this->children = $children;
-
-        return $this;
-    }
-
-    /**
-     * @return Children
-     */
-    public function getChildren()
-    {
-        return $this->children;
     }
 
     /**
