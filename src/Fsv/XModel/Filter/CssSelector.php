@@ -29,6 +29,14 @@ class CssSelector extends XPath
     }
 
     /**
+     * @return array
+     */
+    public function getRequiredOptionNames()
+    {
+        return ['selector'];
+    }
+
+    /**
      * @param DOMXPath $xpath
      * @param array|DOMNodeList $nodes
      * @return DOMNode[]|void

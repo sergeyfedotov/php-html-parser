@@ -28,6 +28,14 @@ class XPath extends AbstractFilter
     }
 
     /**
+     * @return array
+     */
+    public function getRequiredOptionNames()
+    {
+        return ['query'];
+    }
+
+    /**
      * @param DOMXPath $xpath
      * @param array|DOMNodeList $nodes
      * @return DOMNode[]
